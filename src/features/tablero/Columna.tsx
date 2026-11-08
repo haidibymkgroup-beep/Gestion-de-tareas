@@ -18,7 +18,7 @@ export function Columna({ estado, tareas, zona, onAbrir, onNueva }: Props) {
   const idTitulo = `columna-${estado}`;
 
   return (
-    <section className="columna" aria-labelledby={idTitulo} data-estado={estado} data-sobre={isOver || undefined}>
+    <section id={`col-${estado}`} className="columna" aria-labelledby={idTitulo} data-estado={estado} data-sobre={isOver || undefined}>
       <header className="columna-cabecera">
         <h2 id={idTitulo}>
           {ETIQUETA_ESTADO[estado]} <span className="contador" aria-label={`${tareas.length} tareas`}>{tareas.length}</span>

@@ -1,15 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
   PointerSensor,
   closestCorners,
+  pointerWithin,
   useSensor,
   useSensors,
   type Announcements,
   type DragEndEvent,
   type DragOverEvent,
+  type CollisionDetection,
   type DragStartEvent,
   type UniqueIdentifier,
 } from '@dnd-kit/core';
@@ -22,12 +24,23 @@ import { TareaDialogo } from '../tareas/TareaDialogo';
 import { Columna } from './Columna';
 import { TarjetaVisual } from './Tarjeta';
 import { BarraRapida } from './BarraRapida';
+import { PestanasColumnas } from './PestanasColumnas';
 
 type IdsPorColumna = Record<Estado, string[]>;
 
 type Dialogo = { tipo: 'nueva'; estado: Estado } | { tipo: 'editar'; id: string };
 
 const esEstado = (id: UniqueIdentifier): id is Estado => (ESTADOS as readonly string[]).includes(String(id));
+
+/**
+ * Decide sobre qué elemento está la tarjeta que se arrastra. Primero cuenta dónde está el
+ * dedo/puntero (lo intuitivo en el móvil); si no está sobre nada —o se mueve con el teclado—
+ * se usa la cercanía de esquinas.
+ */
+const detectarColision: CollisionDetection = (args) => {
+  const bajoElDedo = pointerWithin(args);
+  return bajoElDedo.length > 0 ? bajoElDedo : closestCorners(args);
+};
 
 /** Devuelve la columna que contiene a `id` (o la propia columna si `id` es un estado). */
 function columnaDe(id: UniqueIdentifier, ids: IdsPorColumna): Estado | undefined {
@@ -46,6 +59,11 @@ export function Tablero({ userId }: { userId: string }) {
   // Al soltar, se guarda en la base de datos y se descarta la copia.
   const [provisional, setProvisional] = useState<IdsPorColumna | null>(null);
   const [activaId, setActivaId] = useState<string | null>(null);
+
+  // En el móvil se ve una columna a la vez (se desliza en horizontal). Detectamos cuál
+  // está a la vista para resaltarla en las pestañas de arriba.
+  const contenedorRef = useRef<HTMLDivElement>(null);
+  const [columnaVisible, setColumnaVisible] = useState<Estado>('pendiente');
 
   const porId = useMemo(() => new Map(tareas.map((t) => [t.id, t])), [tareas]);
 
@@ -168,6 +186,32 @@ export function Tablero({ userId }: { userId: string }) {
     return actualizar(dialogo.id, datos);
   }
 
+  useEffect(() => {
+    const contenedor = contenedorRef.current;
+    if (!contenedor || typeof IntersectionObserver === 'undefined') return;
+    const observador = new IntersectionObserver(
+      (entradas) => {
+        for (const entrada of entradas) {
+          if (entrada.isIntersecting && entrada.intersectionRatio >= 0.6) {
+            const estado = (entrada.target as HTMLElement).dataset.estado;
+            if (estado && esEstado(estado)) setColumnaVisible(estado);
+          }
+        }
+      },
+      { root: contenedor, threshold: [0.6] },
+    );
+    contenedor.querySelectorAll('[data-estado]').forEach((el) => observador.observe(el));
+    return () => observador.disconnect();
+  }, [cargando]);
+
+  function irAColumna(estado: Estado) {
+    setColumnaVisible(estado);
+    const reducir = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document
+      .getElementById(`col-${estado}`)
+      ?.scrollIntoView({ behavior: reducir ? 'auto' : 'smooth', inline: 'start', block: 'nearest' });
+  }
+
   const tareaEditada: Tarea | null = dialogo?.tipo === 'editar' ? (porId.get(dialogo.id) ?? null) : null;
   const tareaActiva = activaId ? porId.get(activaId) : undefined;
 
@@ -190,13 +234,26 @@ export function Tablero({ userId }: { userId: string }) {
         </div>
       )}
 
+      <PestanasColumnas
+        activa={columnaVisible}
+        cantidades={{
+          pendiente: ids.pendiente.length,
+          en_curso: ids.en_curso.length,
+          hecha: ids.hecha.length,
+        }}
+        onElegir={irAColumna}
+      />
+
       <DndContext
         sensors={sensores}
-        collisionDetection={closestCorners}
+        collisionDetection={detectarColision}
         onDragStart={alEmpezar}
         onDragOver={alPasarPor}
         onDragEnd={alSoltar}
         onDragCancel={cancelar}
+        // Desplazamiento automático al acercar el dedo al borde: más lento que el de por defecto
+        // para que en el móvil no se "pase de largo" de una columna a otra.
+        autoScroll={{ acceleration: 4, threshold: { x: 0.18, y: 0.15 } }}
         accessibility={{
           announcements: anuncios,
           screenReaderInstructions: {
@@ -205,7 +262,7 @@ export function Tablero({ userId }: { userId: string }) {
           },
         }}
       >
-        <div className="tablero">
+        <div className="tablero" ref={contenedorRef} data-arrastrando={activaId ? true : undefined}>
           {ESTADOS.map((estado) => (
             <Columna
               key={estado}

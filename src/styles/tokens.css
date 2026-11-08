@@ -35,5 +35,6 @@
 
   --fuente: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --alto-cabecera: 56px;
+  --cabecera-total: calc(var(--alto-cabecera) + env(safe-area-inset-top));
   --alto-barra: 72px;
 }

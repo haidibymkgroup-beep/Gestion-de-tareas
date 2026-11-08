@@ -1,6 +1,6 @@
 # Gestión de Tareas
 
-Aplicación web (PWA) para gestionar tareas personales. El objetivo final es crearlas **por voz o por texto**: una IA convertirá lo que digas en tareas con fecha, hora y prioridad, y tú confirmarás un borrador antes de guardar.
+Aplicación web (PWA) para gestionar tareas personales, **pensada para el móvil** (se instala en la pantalla de inicio; en escritorio también funciona). El objetivo final es crearlas **por voz o por texto**: una IA convertirá lo que digas en tareas con fecha, hora y prioridad, y tú confirmarás un borrador antes de guardar.
 
 ## Estado del proyecto
 
@@ -14,11 +14,11 @@ Aplicación web (PWA) para gestionar tareas personales. El objetivo final es cre
 ### Qué incluye la Fase 1
 
 - Inicio de sesión con **enlace mágico**, **correo y contraseña** y **Google**.
-- **Tablero Kanban** (Pendiente · En curso · Hecha) con arrastrar y soltar (ratón, táctil y teclado).
+- **Tablero Kanban** (Pendiente · En curso · Hecha) con arrastrar y soltar (táctil, ratón y teclado).
 - Crear, editar y eliminar tareas: campo rápido abajo y formulario completo (título, descripción, fecha, hora, prioridad, estado).
 - **Sincronización en tiempo real** entre dispositivos (Supabase Realtime).
 - Cada usuario ve **solo sus tareas** (Row Level Security).
-- Tema oscuro, responsive y accesible. PWA instalable.
+- Tema oscuro, accesible y PWA instalable. Diseño móvil primero (ver más abajo).
 - Ajustes: nombre y zona horaria (se detecta la del dispositivo la primera vez).
 
 ## Requisitos
@@ -112,6 +112,16 @@ tests/           Pruebas unitarias
 - **Color de acento**: edita `--acento` y `--acento-texto` en `src/styles/tokens.css`.
 - **Logo**: reemplaza `public/logo.svg` y `public/favicon.svg`, y los iconos de `public/icons/` (192, 512 y maskable 512; el apple-touch-icon de 180). Los actuales son **provisionales**.
 - **Tipografía**: Inter (paquete `@fontsource-variable/inter`).
+
+## Diseño móvil
+
+- **Una columna a la vez**: se desliza en horizontal (con la siguiente asomando) o se salta con las pestañas de arriba. En pantallas ≥ 900 px se ven las tres a la vez.
+- **Arrastrar con el dedo**: se agarra la tarjeta por el asa (⋮⋮), así no choca con el scroll. Al acercar el dedo al borde, el tablero se desplaza solo. El destino lo marca la posición del dedo.
+- **Otra forma de mover**: tocar la tarjeta y cambiar su *Estado* en el detalle.
+- **Hoja inferior**: el detalle y la nueva tarea se abren como una hoja desde abajo, al alcance del pulgar.
+- **Dianas táctiles** de al menos 44 px y campos a 16 px (iOS no hace zoom al escribir).
+- **Pantalla completa**: respeta el notch y la barra del sistema (`safe-area`); `viewport-fit=cover` e `interactive-widget=resizes-content` para que el teclado no tape el contenido en Android.
+- En iPhone la instalación es manual: *Compartir → Añadir a pantalla de inicio* (iOS 16.4+ para las notificaciones de la Fase 3).
 
 ## Notas de diseño
 

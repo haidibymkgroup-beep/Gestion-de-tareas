@@ -30,7 +30,7 @@ export function BarraRapida({ onCrear }: Props) {
           type="text"
           value={texto}
           maxLength={200}
-          placeholder="Escribe una tarea y pulsa Enter…"
+          placeholder="Nueva tarea…"
           autoComplete="off"
           onChange={(e) => setTexto(e.target.value)}
         />
